@@ -1,5 +1,12 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const {
+    accessDenied,
+    notAuthorized,
+    createFeedback,
+    tar,
+    resourceNotFound
+} = require('../handlers/feedbackHandler');
 
 const createuser = async (req,res)=> {
     const {username,password} = req.body;
@@ -18,13 +25,31 @@ const createuser = async (req,res)=> {
     res.status(feedback.statuscode).json(feedback);
 }
 
+const upgradeuser = async (req, res)=>{
+    const {username, isDowngrade} = req.body;
+    let feedback = createFeedback(404, 'Faulty inputdata!');
+    try{
+        let targetUser = await User.findOne({username});
+        const updateduser = await targetUser.changeUserRole(isDowngrade);
+        feedback=createFeedback(200, 'Success', true, {username:updateduser.username,role:updateduser.role});
+    } catch(error) {
+        feedback=resourceNotFound();
+    }
+    res.status(feedback.statuscode).json(feedback);
+}
+
 const deleteuser = async (req, res)=>{
     const {username} = req.body;
     let feedback = createFeedback(404, `User ${username} could not be deleted`);
     if(typeof(username)!=='undefined'){
-        const result = await User.findOneAndDelete({username});
-        if(result){
-            feedback=createFeedback(200, `${username} was deleted!`, true, result);
+        try {
+
+            const result = await User.findOneAndDelete({username});
+            if(result){
+                feedback=createFeedback(200, `${username} was deleted!`, true, result);
+            }
+        }catch(error){
+            console.log('error!');
         }
     }
     res.status(feedback.statuscode).json(feedback);
@@ -32,13 +57,13 @@ const deleteuser = async (req, res)=>{
 
 const authenticateuser = async (req, res)=>{
     const {username, password} = req.body;
-    let feedback=createFeedback(401, `${username} could not be athenticated`);
+    let feedback=accessDenied();
 
     const user = await User.login(username,password);
     if(user){
         //expiration: one hour
-        const token = jwt.sign({user}, process.env.JWTSECRET, {expiresIn:1000*60*60});
-        feedback=createFeedback(200, `${username} was authenticated`, true, {JWT: token})
+        const token = jwt.sign({_id:user._id}, process.env.JWTSECRET, {expiresIn:"1h"});
+        feedback=createFeedback(200, `${username} was authenticated`, true, {JWT: token});
     } 
     res.status(feedback.statuscode).json(feedback);
 }
@@ -56,34 +81,23 @@ const createtodo = async (req,res)=>{
 
     if(typeof(title)!=='undefined'&&typeof(description)!=='undefined'&& typeof(user)!=='undefined'){
         const todo ={title,description};
-        const tempres = await User.findOneAndUpdate(
-            {_id:user._id}, 
-            {$push:{todos:todo}}
-        );
-        result=createFeedback(200, 'Todo was inserted to the database',true, tempres);
+        user.todos.push(todo);
+        try {
+            const updatedUser = await user.save();
+            result=createFeedback(200, 'Todo was inserted to the database',true, updatedUser.todos);
+        } catch (err) {
+            result = createFeedback(500, 'Internal server error');
+        }
     }
     res.status(result.statuscode).json(result);
 }
 
-/**
- * @param {*} statuscode has to be set manually
- * @param {*} feedback has to be set manually
- * @param {*} isSuccess defaults to false, must be overridden if true
- * @param {*} payload defaults to null
- * This factory method standardises the feedback from this API
- */
-function createFeedback(statuscode, feedback, isSuccess=false,payload=null){
-    return {
-        statuscode,
-        feedback,
-        isSuccess,
-        payload
-    }
-}
+
 
 module.exports={
     createtodo,
     createuser,
     authenticateuser,
-    deleteuser
+    deleteuser,
+    upgradeuser
 }

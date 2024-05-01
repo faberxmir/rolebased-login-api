@@ -21,6 +21,12 @@ const userschema=mongoose.Schema({
         lowercase: true,
         unique: true
     },
+    role: {
+        type: String,
+        required: true,
+        enum: ['user','admin'],
+        default: 'user'
+    },
     password: {
         type: String,
         required: true,
@@ -32,6 +38,7 @@ const userschema=mongoose.Schema({
 userschema.pre('save', hashPassword);
 
 userschema.statics.login=login;
+userschema.methods.changeUserRole=changeUserRole;
 
 /**
  * @param {*} username of the user to log in
@@ -46,6 +53,27 @@ async function login(username, password){
         if(auth) loginresult=user;
     }
     return loginresult;
+}
+
+/**
+ * This function downgrades users by default. This is to ensure that any upgrade is
+ * an explicit choice. 
+ * @param {Boolean} isDowngrade if false, will upgrade 
+ */
+async function changeUserRole(isDowngrade=true){
+    let updatedUser=null;
+    if(isDowngrade) {
+        this.role='user';
+    } else {
+        this.role='admin';
+    }
+    try {
+        updatedUser = await this.save();
+
+    } catch(error){
+        throw error;
+    }
+    return updatedUser;
 }
 
 async function hashPassword(next){

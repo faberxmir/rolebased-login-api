@@ -1,12 +1,15 @@
 const router = require('express').Router();
 const {
-    requireAuth
-} = require('../middleware/requireauth');
+    authenticate,
+    authorizeAdmin
+} = require('../middleware/authorization');
+
 const {
     createuser,
     authenticateuser,
     createtodo,
-    deleteuser
+    deleteuser,
+    upgradeuser
 } = require('../controllers/usercontroller');
 
 //Authentication
@@ -14,7 +17,8 @@ router.post('/create-user', createuser);
 router.post('/authenticate', authenticateuser);
 
 //Protected routes
-router.post('/create-todo',requireAuth, createtodo);
-router.delete('/delete-user', requireAuth, deleteuser); //should require authorization too
+router.post('/create-todo',authenticate, createtodo);
+router.delete('/delete-user', authenticate, authorizeAdmin, deleteuser);
+router.patch('/create-admin', authenticate, authorizeAdmin, upgradeuser);
 
 module.exports=router;
