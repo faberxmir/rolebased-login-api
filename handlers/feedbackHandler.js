@@ -4,6 +4,7 @@
 const ACCESSDENIED=401;
 const UNAUTHORIZED=403;
 const RESOURCENOTFOUND=404;
+const INTERNALSERVERERROR=500;
 const OK=200;
 
 const FEEDBACK="Access Denied! - Authentication failed!";
@@ -14,6 +15,10 @@ function accessDenied(){
 
 function notAuthorized(){
     return createFeedback(UNAUTHORIZED,'Your authorization level does not allow you to access this feature!');
+}
+
+function internalServerError(){
+    return createFeedback(INTERNALSERVERERROR, 'The server encountered an unexpected condition and could not fulfull your request. If this problem persist, please contact the server administrator with a description of your problem.')
 }
 
 function resourceNotFound(){
@@ -40,5 +45,6 @@ module.exports={
     createFeedback,
     accessDenied,
     notAuthorized,
-    resourceNotFound
+    resourceNotFound,
+    internalServerError
 }

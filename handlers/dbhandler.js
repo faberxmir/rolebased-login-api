@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const DBNAME="dev-test";
 
-const connect_to_db = URI =>{
+const mongoConnect = URI =>{
     let state = 'unresolved'
     console.info(`Attempting to connect to mongo database @ URI: \n${URI}`)
     mongoose.connect(URI, {
@@ -15,9 +15,23 @@ const connect_to_db = URI =>{
             state= 'unresolved!'
         })
         .finally(()=>{
-            console.info(`Connection attempt finished! Connection to database ${state}`)
+            console.info(`Connection to database ${state}`)
         })
 }
+
+async function cleanUp(){
+    try{
+        await mongoose.disconnect();
+        console.info('mongoclient disconnected!');
+    } catch(err){
+        console.error(
+            'Error while disconnecting from redis:\n'+
+            '-------------------------------------\n'+
+            err,
+            '-------------------------------------\n');
+    }
+}
+
 module.exports={
-    connect_to_db,
+    mongoConnect
 }

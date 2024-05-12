@@ -1,11 +1,17 @@
-const User = require('../models/User');
+//Created by: Geir Hilmersen
+//5 May 2024 Geir Hilmersen
+
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const RefreshToken = require('../models/RefreshToken');
+const crypto = require('crypto');
+
 const {
     accessDenied,
     notAuthorized,
     createFeedback,
-    tar,
-    resourceNotFound
+    resourceNotFound,
+    internalServerError
 } = require('../handlers/feedbackHandler');
 
 const createuser = async (req,res)=> {
@@ -55,49 +61,92 @@ const deleteuser = async (req, res)=>{
     res.status(feedback.statuscode).json(feedback);
 }
 
-const authenticateuser = async (req, res)=>{
+const logoutuser = async (req, res)=> {
+    let feedback = createFeedback(404, 'user not found!');
+    const {user} = req.body;
+    if(user){
+        feedback = createFeedback(200, `${user.username} has been logged out!`, true);
+    }
+    res.status(feedback.statuscode).json(feedback);
+}
+const loginuser = async (req, res)=>{
     const {username, password} = req.body;
     let feedback=accessDenied();
-
     const user = await User.login(username,password);
+   
     if(user){
+        const {_id} = user;
         //expiration: one hour
-        const token = jwt.sign({_id:user._id}, process.env.JWTSECRET, {expiresIn:"1h"});
-        feedback=createFeedback(200, `${username} was authenticated`, true, {JWT: token});
-    } 
+        const accessToken = generateAccessToken(_id)
+        const refreshToken = await generateRefreshToken(_id);
+
+        if(refreshToken){
+            feedback=createFeedback(200, `${username} was authenticated`, true, {accessToken, refreshToken});
+        } else {
+            feedback=internalServerError();
+        }
+    }
     res.status(feedback.statuscode).json(feedback);
 }
 
 /**
- * @param {*} req 
- * @param {*} res 
+ * This controller checks for req.body.refreshToken, looks up the token in the corresponding
+ * database and checks if it is valid. If it is valid, it authenticates the user and sends
+ * a new accesstoken.
+ */
+const refreshUser = async (req, res)=>{
+    const {_id} = req.body.user;
+    const accessToken=generateAccessToken(_id);
+    const feedback= createFeedback(200,'Token refreshed!', true, {accessToken})
+
+    res.status(feedback.statuscode).json(feedback);
+}
+
+/**
  * The function will look for title and description in the body of the request object.
  * If either of those variables is not present. Then a json object relaying the failure
  * will be rendered.
  */
 const createtodo = async (req,res)=>{
     const {title, description, user}=req.body;
-    let result= createFeedback(404, 'Faulty inputdata');
-
+    let feedback= createFeedback(404, 'Faulty inputdata');
+    console.log(title, description, user)
     if(typeof(title)!=='undefined'&&typeof(description)!=='undefined'&& typeof(user)!=='undefined'){
         const todo ={title,description};
         user.todos.push(todo);
         try {
             const updatedUser = await user.save();
-            result=createFeedback(200, 'Todo was inserted to the database',true, updatedUser.todos);
+            feedback=createFeedback(200, 'Todo was inserted to the database',true, updatedUser.todos);
         } catch (err) {
-            result = createFeedback(500, 'Internal server error');
+            console.log(err)
+            feedback = createFeedback(500, 'Internal server error');
         }
     }
-    res.status(result.statuscode).json(result);
+    sendresponse(res,feedback);
 }
 
+function generateAccessToken(_id){
+    return jwt.sign({_id}, process.env.JWTSECRET, {expiresIn:"1h"});
+}
 
+async function generateRefreshToken(_id){
+    const cryptotoken = crypto.randomBytes(32).toString('hex');
+    //expiration: one week
+    const refreshToken = jwt.sign({_id, cryptotoken}, process.env.JWTSECRET, {expiresIn:"1w"});
+    const result = await RefreshToken.create({jwt:refreshToken, cryptotoken});
+    return refreshToken;
+}
+
+function sendresponse(response,feedback){
+    response.status(feedback.statuscode).json(feedback);
+}
 
 module.exports={
     createtodo,
     createuser,
-    authenticateuser,
+    loginuser,
+    logoutuser,
     deleteuser,
-    upgradeuser
+    upgradeuser,
+    refreshUser
 }

@@ -1,10 +1,13 @@
 require('dotenv').config();
+const appEventHandler = require('./handlers/appEventHandler');
 const express = require('express');
 const app = express();
 const default_routes=require('./routes/default_routes');
 const user_api=require('./routes/api_user_routes');
+const {enableRedis}=require('./handlers/redishandler')
 
-const {connect_to_db
+const {
+    mongoConnect
 } = require('./handlers/dbhandler');
 
 const PORT = process.env.PORT || 3000;
@@ -20,5 +23,6 @@ app.use(user_api);
 app.listen(PORT, ()=>{
     console.log(`Revving engine...`);
     console.log(`Server started at port ${PORT}\n------------------------------------`);
-    connect_to_db(DBURI);    
+    mongoConnect(DBURI);   
+    enableRedis(); 
 });

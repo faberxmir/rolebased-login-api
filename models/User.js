@@ -55,6 +55,15 @@ async function login(username, password){
     return loginresult;
 }
 
+
+async function hashPassword(next){
+    if(this.isModified('password')){
+        const salt = await bcrypt.genSalt();
+        this.password = await bcrypt.hash(this.password, salt);
+    }
+    next();
+}
+
 /**
  * This function downgrades users by default. This is to ensure that any upgrade is
  * an explicit choice. 
@@ -75,13 +84,6 @@ async function changeUserRole(isDowngrade=true){
     }
     return updatedUser;
 }
-
-async function hashPassword(next){
-    const salt = await bcrypt.genSalt();
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-}
-
 const User = mongoose.model('user',userschema);
 
 module.exports=User;
