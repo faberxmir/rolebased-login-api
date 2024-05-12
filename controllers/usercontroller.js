@@ -13,6 +13,7 @@ const {
     resourceNotFound,
     internalServerError
 } = require('../handlers/feedbackHandler');
+const { response } = require('express');
 
 const createuser = async (req,res)=> {
     const {username,password} = req.body;
@@ -110,7 +111,7 @@ const refreshUser = async (req, res)=>{
 const createtodo = async (req,res)=>{
     const {title, description, user}=req.body;
     let feedback= createFeedback(404, 'Faulty inputdata');
-    console.log(title, description, user)
+
     if(typeof(title)!=='undefined'&&typeof(description)!=='undefined'&& typeof(user)!=='undefined'){
         const todo ={title,description};
         user.todos.push(todo);
@@ -125,8 +126,28 @@ const createtodo = async (req,res)=>{
     sendresponse(res,feedback);
 }
 
+const removetodo = async (req, res)=>{
+    let feedback=resourceNotFound();
+    const {title, user} = req.body;
+    if(typeof title === 'string' && typeof user === 'object') {
+        user.todos = user.todos.filter(item => {
+            return item.title !== title;
+    });
+
+        try {
+            const {todos} = await user.save();
+            feedback = createFeedback(200, 'Reqested title is gone!', true, todos);
+        } catch(error){
+
+        }
+    }
+
+    sendresponse(res, feedback);
+}
+
 function generateAccessToken(_id){
-    return jwt.sign({_id}, process.env.JWTSECRET, {expiresIn:"1h"});
+    const cryptotoken = crypto.randomBytes(32).toString('hex');
+    return jwt.sign({_id, cryptotoken}, process.env.JWTSECRET, {expiresIn:"1h"});
 }
 
 async function generateRefreshToken(_id){
@@ -143,6 +164,7 @@ function sendresponse(response,feedback){
 
 module.exports={
     createtodo,
+    removetodo,
     createuser,
     loginuser,
     logoutuser,

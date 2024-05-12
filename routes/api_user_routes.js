@@ -11,6 +11,7 @@ const {
     loginuser,
     logoutuser,
     createtodo,
+    removetodo,
     deleteuser,
     upgradeuser,
     refreshUser
@@ -25,6 +26,7 @@ router.post('/logout', invalidateTokens, logoutuser)
 
 //Protected routes
 router.post('/create-todo', authenticate, createtodo);
+router.delete('/remove-todo', authenticate, removetodo);
 router.delete('/delete-user', authenticate, authorizeAdmin, deleteuser);
 router.patch('/create-admin', authenticate, authorizeAdmin, upgradeuser);
 

@@ -1,3 +1,4 @@
+// May 2024 Geir Hilmersen
 const {
     cleanUp: mongoCleanUp
 } = require('mongoose');

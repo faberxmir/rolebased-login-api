@@ -19,12 +19,10 @@ const {
 const authenticate = async (req,res,next) => {
     const accesstoken = req.headers.authorization?.split(' ')[1];
     let feedback = accessDenied();
-    console.log('authenticating')
     if(typeof(accesstoken)!=='undefined'&&typeof(accesstoken)==='string'){
-        
         try {
-            const {_id} = jwt.verify(accesstoken, process.env.JWTSECRET);
-            const isBanned= await isTokenBanned(_id);
+            const {_id, cryptotoken} = jwt.verify(accesstoken, process.env.JWTSECRET);
+            const isBanned= await isTokenBanned(cryptotoken);
             if(!isBanned){
                 const user = await User.findOne({_id});
                 req.body.user=user;
@@ -104,10 +102,11 @@ const invalidateTokens = async (req, res, next) => {
         }
 
         if(typeof accessToken !== 'undefined' && typeof accessToken === 'string'){
-            const {_id, exp} = await jwt.verify(accessToken, process.env.JWTSECRET);
+            const {cryptotoken, exp} = await jwt.verify(accessToken, process.env.JWTSECRET);
+            console.log(cryptotoken);
             const bantime = exp - Math.ceil((Date.now()/1000));
             //Ban accesstoken in redis for the remaining duration of the token
-            setTokenBan(_id, accessToken, bantime);
+            setTokenBan(cryptotoken, accessToken, bantime);
         } else {
             if(feedback.payload){
                 feedback = createFeedback(404, feedback.payload.push('invalid refresh token'));
