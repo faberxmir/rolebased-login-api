@@ -23,7 +23,8 @@ const createuser = async (req,res)=> {
         try {
             const result = await User.create({username,password});
             if(result) {
-                feedback = createFeedback(200, `${username} was created!`,true, result);
+                const {_id} = result;
+                feedback = createFeedback(200, `${username} was created!`,true, {_id});
             }
         } catch(error) {
             feedback = createFeedback(409, `${username} could not be created!`, false, error)
@@ -38,7 +39,12 @@ const upgradeuser = async (req, res)=>{
     try{
         let targetUser = await User.findOne({username});
         const updateduser = await targetUser.changeUserRole(isDowngrade);
-        feedback=createFeedback(200, 'Success', true, {username:updateduser.username,role:updateduser.role});
+
+        if(updateduser){
+            feedback=createFeedback(200, 'Success', true, {username:updateduser.username,role:updateduser.role});
+        } else {
+            feedback=internalServerError();
+        }
     } catch(error) {
         feedback=resourceNotFound();
     }
@@ -150,11 +156,17 @@ function generateAccessToken(_id){
     return jwt.sign({_id, cryptotoken}, process.env.JWTSECRET, {expiresIn:"1h"});
 }
 
+//generates a refresh token that is valid for one week
 async function generateRefreshToken(_id){
+    const expireDays=7; //jwt token measure expire in days
+    const expireTime= new Date(); //Mongodb handles expiry better if it is a date
+    expireTime.setDate(expireTime.getDate()+expireDays);
+
     const cryptotoken = crypto.randomBytes(32).toString('hex');
-    //expiration: one week
-    const refreshToken = jwt.sign({_id, cryptotoken}, process.env.JWTSECRET, {expiresIn:"1w"});
-    const result = await RefreshToken.create({jwt:refreshToken, cryptotoken});
+
+    const refreshToken = jwt.sign({_id, cryptotoken}, process.env.JWTSECRET, {expiresIn:`${expireDays}d`});
+
+    const result = await RefreshToken.create({jwt:refreshToken, cryptotoken, expireTime});
     return refreshToken;
 }
 

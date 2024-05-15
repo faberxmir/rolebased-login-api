@@ -6,7 +6,7 @@ client.on('connect', ()=>{
     console.info('Connection to redis successfully established')
 })
 client.on('error', err=> {
-    console.error('Error!\n-------------------------------------------\n',err,'\n');
+    console.error('Error! Could not connect to redis!\n-------------------------------------------\n',err,'\n');
 })
 
 async function enableRedis(connection){
@@ -55,5 +55,6 @@ async function cleanUp(){
 module.exports={
     enableRedis,
     isTokenBanned,
-    setTokenBan
+    setTokenBan,
+    cleanUp
 };

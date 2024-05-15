@@ -33,5 +33,6 @@ async function cleanUp(){
 }
 
 module.exports={
-    mongoConnect
+    mongoConnect,
+    cleanUp
 }
