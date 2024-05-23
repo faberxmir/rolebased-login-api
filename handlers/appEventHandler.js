@@ -1,7 +1,7 @@
 // May 2024 Geir Hilmersen
 const {
     cleanUp: mongoCleanUp
-} = require('mongoose');
+} = require('./dbhandler');
 const {
     cleanUp: redisCleanUp
 } = require('./redishandler');
