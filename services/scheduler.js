@@ -1,9 +1,9 @@
 const nodecron=require('node-cron');
 const RefreshToken=require('../models/RefreshToken');
 
-// Runs a daily cleanup of expired tokens. Neeeds to be expanded in case of more scheduled tasks
+// Defaults to run every day at 00:00, but can be reconfigured
 // Could implement a register and register(function);
-function startScheduler(minutesOfDay='*', hourOfDay='*', dayOfMonth='*', month='*', dayOfWeek='*' ){
+function startScheduler(minutesOfDay='0', hourOfDay='0', dayOfMonth='*', month='*', dayOfWeek='*' ){
     //Call the cleanupfunction from the RefreshToken model
     const cronstring = `${minutesOfDay} ${hourOfDay} ${dayOfMonth} ${month} ${dayOfWeek}`;
     console.log("Starting schedule according to cronstring:",cronstring)

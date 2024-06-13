@@ -1,19 +1,18 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const PASSWORDLENGTH=8;
+const role = {
+    USER: 'user',
+    ADMIN: 'admin'
+}
+const status={
+    DISABLED: 'disabled',
+    ENABLED: 'enabled',
+    DENIED: 'denied',
+    APPROVALPENDING: 'approval pending',
+    SUSPENDED: 'suspended'
+}
 
-const todoschema=mongoose.Schema({
-    title: {
-        type: String,
-        required: true,
-        minlength: [5, 'your title needs to be at least 5 characters']
-    },
-    description: {
-        type: String,
-        required: true,
-        minlength: [10, 'Your task needs to be more descriptive! 10 characters please!']
-    }
-})
 const userschema=mongoose.Schema({
     username: {
         type: String,
@@ -24,15 +23,25 @@ const userschema=mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['user','admin'],
-        default: 'user'
+        enum: [role.USER, role.ADMIN],
+        default: role.USER
     },
     password: {
         type: String,
         required: true,
         minlength: [PASSWORDLENGTH, `Passwords must have at least this many letters: ${PASSWORDLENGTH}`]
     },
-    todos:[todoschema]
+    status: {
+        type: String,
+        required: true,
+        enum: [status.DISABLED, status.ENABLED, status.DENIED, status.APPROVALPENDING, status.SUSPENDED],
+        default: status.APPROVALPENDING
+    },
+    family: {
+        type: String,
+        required: false,
+        default: null
+    }
 })
 
 userschema.pre('save', hashPassword);
@@ -72,9 +81,9 @@ async function hashPassword(next){
 async function changeUserRole(isDowngrade=true){
     let updatedUser=null;
     if(isDowngrade) {
-        this.role='user';
+        this.role=role.USER;
     } else {
-        this.role='admin';
+        this.role=role.ADMIN;
     }
     try {
         updatedUser = await this.save();

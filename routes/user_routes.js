@@ -3,7 +3,6 @@ const {
     authenticate,
     authenticateRefreshToken,
     invalidateTokens,
-    authorizeAdmin
 } = require('../middleware/authorization');
 
 const {
@@ -12,8 +11,6 @@ const {
     logoutuser,
     createtodo,
     removetodo,
-    deleteuser,
-    upgradeuser,
     refreshUser
 } = require('../controllers/usercontroller');
 
@@ -27,7 +24,5 @@ router.post('/logout', invalidateTokens, logoutuser)
 //Protected routes
 router.post('/create-todo', authenticate, createtodo);
 router.delete('/remove-todo', authenticate, removetodo);
-router.delete('/delete-user', authenticate, authorizeAdmin, deleteuser);
-router.patch('/create-admin', authenticate, authorizeAdmin, upgradeuser);
 
 module.exports=router;

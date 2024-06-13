@@ -1,3 +1,7 @@
+# localfolders
+testdata
+tests
+
 # Logs
 logs
 *.log

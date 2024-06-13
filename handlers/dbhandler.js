@@ -25,7 +25,7 @@ async function cleanUp(){
         console.info('mongoclient disconnected!');
     } catch(err){
         console.error(
-            'Error while disconnecting from redis:\n'+
+            'Error while disconnecting from mongodb:\n'+
             '-------------------------------------\n'+
             err,
             '-------------------------------------\n');

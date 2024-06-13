@@ -3,7 +3,9 @@ const appEventHandler = require('./handlers/appEventHandler');
 const express = require('express');
 const app = express();
 const default_routes=require('./routes/default_routes');
-const user_api=require('./routes/api_user_routes');
+const user_routes=require('./routes/user_routes');
+const admin_routes=require('./routes/admin_routes')
+
 const {startScheduler}=require('./services/scheduler');
 
 const {enableRedis}=require('./handlers/redishandler')
@@ -19,8 +21,10 @@ const DBURI = process.env.DBURI || '';
 app.use(express.urlencoded({extended:true}));
 app.use(express.json());
 
+//Routes
 app.use(default_routes);
-app.use(user_api);
+app.use(user_routes);
+app.use('/admin', admin_routes)
 
 app.listen(PORT, ()=>{
     console.log(`Revving engine...`);
